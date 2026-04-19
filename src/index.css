@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: "GenJyuu";
+  src: url("./assets/fonts/GenJyuuGothic-Normal.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "GenJyuu";
+  src: url("./assets/fonts/GenJyuuGothic-P-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  font-family: "GenJyuu", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+body {
+  font-family: inherit;
+}

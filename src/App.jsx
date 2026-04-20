@@ -1,1102 +1,944 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Moon,
+  SunMedium,
+  Share2,
+  RotateCcw,
+  ExternalLink,
+  Home,
+} from "lucide-react";
 
-const questionBank = [
+const FAMILY_META = {
+  A: {
+    name: "Sunlit Fruity",
+    longName: "Sunlit Fruity Family",
+    emoji: "🍑",
+    glow: "from-pink-200 via-yellow-100 to-orange-100",
+    nightGlow: "from-pink-900/40 via-amber-900/20 to-rose-900/30",
+  },
+  B: {
+    name: "Morning-Mist White Floral",
+    longName: "Morning-Mist White Floral Family",
+    emoji: "☁️",
+    glow: "from-sky-100 via-cyan-50 to-indigo-100",
+    nightGlow: "from-sky-900/40 via-cyan-900/20 to-indigo-900/30",
+  },
+  C: {
+    name: "Moonlit Incense",
+    longName: "Moonlit Incense Family",
+    emoji: "🌙",
+    glow: "from-violet-200 via-purple-100 to-fuchsia-100",
+    nightGlow: "from-violet-900/40 via-purple-900/20 to-fuchsia-900/30",
+  },
+  D: {
+    name: "Cold-Forest Metal",
+    longName: "Cold-Forest Metal Family",
+    emoji: "🌲",
+    glow: "from-emerald-100 via-teal-50 to-slate-200",
+    nightGlow: "from-emerald-900/30 via-teal-900/20 to-slate-900/40",
+  },
+};
+
+const RESULTS = {
+  A1: {
+    family: "A",
+    title: "Creamy Floral Fruity Soft Scent",
+    vibe: "A delicate, pretty, softly glowing scent, like wandering through flowers in the woods.",
+    description:
+      "It feels like a light fluttery skirt, petals lit by sunlight, and a faint fruity sweetness left on the skin. It’s a natural kind of beauty, the kind that feels effortless and soft without ever looking forced. This perfume blooms quietly in its own little world. It’s not the kind of glow that blinds you right away, but the kind that makes you look back a second time.",
+    keywords: ["pear", "peach", "rose", "creamy notes", "white musk", "soft sweet florals"],
+    fits: ["pretty types", "artsy vibes", "gentle aesthetic lovers", "foresty vibes", "flower-themed characters", "detail lovers"],
+  },
+  A2: {
+    family: "A",
+    title: "Fairy Tale Berry Pink Mist",
+    vibe: "A romantic, soft scent with a bit of childlike nostalgia in it.",
+    description:
+      "It feels like opening your favorite fairy tale book from childhood, with green gardens, pink sunsets, berry cream desserts, and soft floaty fabric drifting in the breeze. It smells dreamy and a little unreal, like stepping into another world for a while. This scent fits the kind of character who feels fragile and sparkly at the same time. It brings up thoughts of wishes, secrets, little poems, and late-night feelings that are too soft to say out loud.",
+    keywords: ["grass", "after-rain air", "daisy", "vanilla", "musk", "sugar icing"],
+    fits: ["fairy tale types", "dreamy vibes", "artsy people", "soft little animal energy", "poetry-loving types", "pure romance vibes"],
+  },
+  A3: {
+    family: "A",
+    title: "Sweet Peach Soda Fruity Floral",
+    vibe: "A bright, passionate, super cute scent that practically glows.",
+    description:
+      "It feels like fruity sparkling drinks in summer, colorful candy in a candy shop, lively instant photos, and glittery little accessories shining in the sun. The whole thing feels cheerful, sweet, and super easy to notice. This scent has big idol energy. It’s not super complicated, but it’s lovable right away, like a tiny sun that makes everything around it feel brighter.",
+    keywords: ["peach", "strawberry", "lychee", "sweet fruity florals", "ramune soda", "fruit candy"],
+    fits: ["idol types", "sweet girls", "energetic pretty girls", "sunshine characters", "social center types", "sparkling main-character vibes"],
+  },
+  A4: {
+    family: "A",
+    title: "Pop-Rock Candy Fantasy Party Scent",
+    vibe: "This fits a scent that feels lively, bouncy, and wonderfully weird in the cutest way.",
+    description:
+      "It feels like colorful candy wrappers, fireworks, juice, little bits of magic, and surprise after surprise appearing out of nowhere. The scent keeps jumping around in a super expressive way, like happiness that refuses to sit still. There’s a bit of childlike wonder in it, a bit of contrast, and a bit of unpredictability too. But overall it just feels fresh, bright, and full of life.",
+    keywords: ["citrus", "berries", "orange blossom", "juice", "vanilla", "rainbow sprinkles"],
+    fits: ["chaotic cuties", "adventurers", "little sunshine types", "huge imagination energy"],
+  },
+  B1: {
+    family: "B",
+    title: "Soap Scent Like Early Morning Air",
+    vibe: "A clean, restrained, low-key kind of scent.",
+    description:
+      "At first it might feel kinda plain or simple, but then the image starts to come through: a freshly ironed white shirt, crisp morning air, and a room kept super neat and tidy. It just makes everything feel fresh, calm, and reliable. If this were a perfume, the opening wouldn’t be loud or attention-grabbing. You might even think, ‘oh, that’s pretty simple,’ but the longer it stays, the more you notice that cool, clean, structured charm. It’s subtle, but it really grows on you.",
+    keywords: ["soapy", "fir", "cedar", "white musk", "iris", "clean fabric"],
+    fits: ["uniform types", "serious ones", "orderly types", "stoic vibes", "older-and-steady feeling", "quiet and dependable people"],
+  },
+  B2: {
+    family: "B",
+    title: "Cotton Scent Through Early Spring Fog",
+    vibe: "A gentle, caring scent that stays by your side like a quiet little white cat, warm and clear.",
+    description:
+      "It feels like a soft knit sweater, freshly washed sheets drying in the sun, and pale morning light coming through the window. It doesn’t try hard to stand out, but it has this super comfy feeling that makes people want to get a little closer. This kind of scent isn’t trying to overpower anyone. It feels more like helping someone relax and breathe easier for a while. Soft, warm, and quietly comforting from start to finish.",
+    keywords: ["white tea", "lily of the valley", "cotton", "milky notes", "soft florals", "gentle musk"],
+    fits: ["healing types", "neighbor vibes", "caring softies", "white moonlight type", "everyday cozy feeling", "gentle pretty people"],
+  },
+  B3: {
+    family: "B",
+    title: "Bright Bouquet Sweet Soft Scent",
+    vibe: "A friendly, cheerful scent that feels as sweet and comforting as fresh-baked food.",
+    description:
+      "It feels like a bouquet you just received, delicious fruit beside a cream cake, and the person at a gathering who keeps smiling and making sure everything feels nice. Soft, likable, and full of warmth. This scent gives off that ‘you’re welcome here’ feeling. It’s bright, easy to like, and perfect for the kind of character who naturally makes the whole room feel softer.",
+    keywords: ["peony", "jasmine", "pear", "white peach", "white musk", "mixed florals"],
+    fits: ["group favorite", "social butterfly", "warm protagonist vibes", "caring types", "holiday mood makers"],
+  },
+  B4: {
+    family: "B",
+    title: "Red Rose Amber Main Character Scent",
+    vibe: "A warm, radiant scent with calm and gentle charisma.",
+    description:
+      "It feels like roses, golden sunlight, and the center of a stage where everyone is looking, but the person standing there still looks completely at ease. It naturally gives off that ‘main character’ feeling. This scent has both warmth and depth. The opening catches attention, and the drydown lingers in a way that feels soft, mature, and quietly powerful.",
+    keywords: ["rose", "amber", "berries", "sandalwood", "honey"],
+    fits: ["main characters", "leaders", "center-stage types", "savior vibes", "prince charming types"],
+  },
+  C1: {
+    family: "C",
+    title: "Incense and Bathing on an Early Summer Night",
+    vibe: "A mysterious, soft scent with a little bit of distance that you can’t fully figure out.",
+    description:
+      "It feels like faint purple mist on an early summer night, dried flowers tucked between old book pages, and quiet incense slowly burning in the dark. It’s the kind of scent that makes you pause for a second and think a little more. It doesn’t feel cold, just hard to fully read. The first impression is like a soft little mystery, and only later does the warmth underneath start to show.",
+    keywords: ["violet", "iris", "incense", "amber", "misty woods", "old paper"],
+    fits: ["prophet types", "mysterious guides", "spiritual mentor vibes", "elegant people with a bit of distance"],
+  },
+  C2: {
+    family: "C",
+    title: "Cool Mist, Book Pages, and Tea Wood",
+    vibe: "A scent that feels smart, distant, quiet, and just a little restless.",
+    description:
+      "It feels like the corner of a room, notes left open past midnight, an old book flipped open, and fruit tea that’s gone half cold. It’s not the usual easy-to-love kind of scent. It feels more specific, more strange, more hard to label. The charm here isn’t social sparkle. It’s the weird little pull of intelligence, silence, and that ‘there’s definitely something going on in there’ kind of feeling.",
+    keywords: ["tea", "blueberry", "cool musk", "cashmere wood", "dusty notes", "dry woods"],
+    fits: ["scholars", "researchers", "genius homebody types", "niche-interest lovers", "quiet people who think a lot"],
+  },
+  C3: {
+    family: "C",
+    title: "Contrasty Spicy Fruity Wood",
+    vibe: "A smart, flirty, dangerous-but-fun kind of scent.",
+    description:
+      "It feels like biting into a slightly spicy fruit, sharp words hidden inside a joke, and a whiskey glass swaying under dim lights. It’s a little stimulating, a little unruly, and gives off that ‘okay wait… was that on purpose?’ kind of mood. This isn’t the classic safe-and-stable type of scent. The longer it stays, the more little twists show up, and that’s exactly what makes it fun.",
+    keywords: ["fig", "pink pepper", "ginger", "amber", "woods", "sweet spice"],
+    fits: ["finance playboy vibes", "masters of their game", "chaos energy", "charming antagonist types"],
+  },
+  C4: {
+    family: "C",
+    title: "Dark Gold Spiced Wood Authority Scent",
+    vibe: "A powerful, glamorous scent where pressure and charm exist at the same time.",
+    description:
+      "It feels like dark golden light hitting heavy curtains, expensive fabric brushing past the stage, sharp heels, and the kind of scene where one sentence is enough to decide everything. It isn’t soft or approachable. It feels purposeful and intense. This scent fits characters with undeniable aura, maybe even a little dangerous luxury mixed in. It’s not something everybody can pull off, but when it fits, it looks insanely good.",
+    keywords: ["saffron", "oud", "amber", "blackcurrant", "spicy woods", "dark golden resin vibes"],
+    fits: ["queen or king types", "villain bosses", "workaholics", "ambitious people", "ultimate powerhouses", "room-dominating characters"],
+  },
+  D1: {
+    family: "D",
+    title: "Black Obsidian Cool Wood Spice",
+    vibe: "A sharp, logical scent with strong control vibes, like dancing right along the edge of a blade.",
+    description:
+      "It feels like a black coat, skyscrapers at night, cool-toned metal, and a complicated machine quietly running in the dark. Everything about it feels calm, precise, and a little untouchable. This scent doesn’t really try to please everybody. It feels more like a statement. Not loud, not sweet, not easy on purpose, but definitely hard to forget.",
+    keywords: ["cypress", "black pepper", "vetiver", "patchouli", "cool woods", "a hint of smoke"],
+    fits: ["strategists", "people in power", "cold intelligent types", "workplace elite vibes"],
+  },
+  D2: {
+    family: "D",
+    title: "Metal, Leather, and Citrus Wood",
+    vibe: "A neat, independent scent that sways right near the edge of danger.",
+    description:
+      "It feels like cold wind against a motorcycle helmet, the metallic touch of a toolbox, freshly peeled citrus, and worn leather gloves. There’s a wild dusty edge to it that makes the whole scent feel cool without trying too hard. It has a bit of distance to it, and at first it can seem hard to approach. But the longer it stays, the more real it feels, with a rough little charm hidden underneath.",
+    keywords: ["bergamot", "leather", "tobacco", "cedar", "mineral notes", "cold air"],
+    fits: ["cool guys and girls", "quiet action types", "techwear vibes", "people who look super cool in a fight", "low-emotion-output types"],
+  },
+  D3: {
+    family: "D",
+    title: "Sparkling Citrus Leather",
+    vibe: "A bold, confident, thrilling scent that walks right on the edge and gets remembered fast.",
+    description:
+      "It feels like a freshly opened ice-cold soda, a lively beach night, shiny leather under the noon sun, and wind rushing past your ears. It hits quickly and leaves a bright, exciting first impression. This scent isn’t mellow or gentle. It’s energetic, a little provocative, and very hard to ignore. Perfect for the kind of character who looks like trouble, but in a really attractive way.",
+    keywords: ["citrus", "wild rose", "sea salt", "leather", "pepper", "fizzy soda vibes"],
+    fits: ["party people", "sporty types", "city nightlife vibes", "dangerous but addictive types"],
+  },
+  D4: {
+    family: "D",
+    title: "Classic Chypre Citrus Moss",
+    vibe: "A mature, dependable scent with strong execution power.",
+    description:
+      "It feels like a high-quality suit jacket, a spotless office, polished leather goods, and a perfectly organized schedule. It smells stable and put-together, with no extra decoration needed. This scent has a classic, authoritative feel. Steady, clear, and reliable from the first impression to the very end.",
+    keywords: ["bergamot", "oakmoss", "patchouli", "vetiver", "clean florals", "chypre"],
+    fits: ["leaders", "class president types", "career-minded people", "strong executors", "mature and steady characters"],
+  },
+};
+
+const QUESTIONS = [
   {
-    id: "q1",
-    title: {
-      zh: "1. 可见区域内的特殊特征种类数",
-      en: "1. Number of special feature types in the visible area",
-    },
-    desc: {
-      zh: "例如：角、特殊耳朵、尾巴、翅膀、异形器官、特殊皮肤或外壳结构等。同类特征只算 1 种，不会因为数量变多而重复计分。装饰、花纹、鳞片、纹身、疤痕、发色与发部异形不算在本题内。",
-      en: "Examples: horns, unusual ears, tails, wings, non-human organs, special skin or shell-like structures, etc. Repeated features of the same type only count as one type. Decorations, patterns, scales, tattoos, scars, hair color, and unusual hair structure are not counted in this question.",
-    },
+    id: 1,
+    prompt: "Pick a place you would disappear to for an hour.",
     options: [
-      {
-        label: {
-          zh: "没有，或仅有 1 种简单特殊特征",
-          en: "None, or only 1 simple special feature",
-        },
-        value: 0,
-      },
-      {
-        label: {
-          zh: "有 2 种特殊特征",
-          en: "2 special feature types",
-        },
-        value: 1,
-      },
-      {
-        label: {
-          zh: "有 3–4 种特殊特征",
-          en: "3–4 special feature types",
-        },
-        value: 2,
-      },
-      {
-        label: {
-          zh: "有 5 种及以上特殊特征",
-          en: "5 or more special feature types",
-        },
-        value: 3,
-      },
+      { key: "A", text: "A flower market full of candy colors.", resultId: "A1" },
+      { key: "B", text: "A sunlit room with clean sheets and open windows.", resultId: "B1" },
+      { key: "C", text: "A quiet library corner with old pages and violet dust.", resultId: "C2" },
+      { key: "D", text: "A rooftop at night with cold wind and city steel.", resultId: "D1" },
     ],
   },
   {
-    id: "q2",
-    title: {
-      zh: "2. 头部 / 可见区域的小型装饰数量",
-      en: "2. Number of small decorations on the head / visible area",
-    },
-    desc: {
-      zh: "例如：挂饰、珠串、链条、花朵、蝴蝶结、小配件等。重复性很高的整串珍珠或链条可按 1 件计算。",
-      en: "Examples: charms, bead strands, chains, flowers, bows, and other small accessories. A repeated full pearl strand or long chain can be counted as one item.",
-    },
+    id: 2,
+    prompt: "Which accessory suits you best?",
     options: [
-      {
-        label: { zh: "0–2 件", en: "0–2 items" },
-        value: 0,
-      },
-      {
-        label: { zh: "3–5 件", en: "3–5 items" },
-        value: 1,
-      },
-      {
-        label: { zh: "6–8 件", en: "6–8 items" },
-        value: 2,
-      },
-      {
-        label: { zh: "8 件以上", en: "More than 8 items" },
-        value: 3,
-      },
+      { key: "A", text: "A glossy ribbon or candy-shaped charm.", resultId: "A3" },
+      { key: "B", text: "A soft linen scarf or pressed-flower bookmark.", resultId: "B2" },
+      { key: "C", text: "A ring with an old stone and no explanation.", resultId: "C1" },
+      { key: "D", text: "A sleek watch or dark leather gloves.", resultId: "D2" },
     ],
   },
   {
-    id: "q3",
-    title: {
-      zh: "3. 发色复杂度",
-      en: "3. Hair color complexity",
-    },
-    desc: {
-      zh: "只计算明显需要还原的主要颜色变化，小面积挑染通常可忽略。",
-      en: "Only count major color changes that clearly need to be preserved. Small highlight streaks can usually be ignored.",
-    },
+    id: 3,
+    prompt: "What kind of first impression do you leave?",
     options: [
-      {
-        label: {
-          zh: "单色 / 简单双色",
-          en: "Single color / simple two-color hair",
-        },
-        value: 0,
-      },
-      {
-        label: {
-          zh: "三色左右，整体仍较容易处理",
-          en: "Around three colors, still fairly easy to handle",
-        },
-        value: 1,
-      },
-      {
-        label: {
-          zh: "四色以上，或分区较复杂",
-          en: "Four or more colors, or more complex color blocking",
-        },
-        value: 2,
-      },
-      {
-        label: {
-          zh: "彩虹色 / 多段精确渐变 / 明显高难度综合色",
-          en: "Rainbow hair / precise multi-step gradient / very complex mixed coloring",
-        },
-        value: 3,
-      },
+      { key: "A", text: "Bright, fun, and easy to notice.", resultId: "A4" },
+      { key: "B", text: "Soft, safe, and strangely comforting.", resultId: "B3" },
+      { key: "C", text: "Mysterious, elegant, and hard to figure out.", resultId: "C1" },
+      { key: "D", text: "Cool, capable, and a little intimidating.", resultId: "D4" },
     ],
   },
   {
-    id: "q4",
-    title: {
-      zh: "4. 发部结构复杂度",
-      en: "4. Hair structure complexity",
-    },
-    desc: {
-      zh: "根据这次需要画出来的发部状态进行选择。",
-      en: "Choose based on how the hair area needs to be drawn in this YCH.",
-    },
+    id: 4,
+    prompt: "Choose the light that feels most like you.",
     options: [
-      {
-        label: {
-          zh: "普通发丝结构",
-          en: "Normal hair strand structure",
-        },
-        value: 0,
-      },
-      {
-        label: {
-          zh: "少量异形元素混入，但头发仍是主体",
-          en: "A few unusual elements are mixed in, but hair is still the main structure",
-        },
-        value: 1,
-      },
-      {
-        label: {
-          zh: "非发丝元素混入较明显，已影响整体观感",
-          en: "Non-hair elements are clearly mixed in and affect the overall look",
-        },
-        value: 2,
-      },
-      {
-        label: {
-          zh: "非发丝元素很多，接近与头发同等存在感",
-          en: "Many non-hair elements are present, almost as prominent as the hair itself",
-        },
-        value: 3,
-      },
+      { key: "A", text: "Honey-colored afternoon light.", resultId: "A1" },
+      { key: "B", text: "Pale morning light through curtains.", resultId: "B2" },
+      { key: "C", text: "Purple-blue dusk after rain.", resultId: "C3" },
+      { key: "D", text: "White city reflections on black glass.", resultId: "D1" },
     ],
   },
   {
-    id: "q5",
-    title: {
-      zh: "5. 可见区域内的花纹 / 鳞片 / 纹身 / 疤痕覆盖程度",
-      en: "5. Coverage of patterns / scales / tattoos / scars in the visible area",
-    },
-    desc: {
-      zh: "只计算当前这张 YCH 实际会画到的部分。",
-      en: "Only count the part that will actually appear in this specific YCH.",
-    },
+    id: 5,
+    prompt: "Which texture feels most right to you?",
     options: [
-      {
-        label: {
-          zh: "没有，或只有少量小面积细节",
-          en: "None, or only a few tiny details",
-        },
-        value: 0,
-      },
-      {
-        label: {
-          zh: "有一定面积，但分布不算多",
-          en: "Moderate presence, but not spread very widely",
-        },
-        value: 1,
-      },
-      {
-        label: {
-          zh: "面积较大，且需要明显适配到画面里",
-          en: "Large enough that it needs clear adaptation in the artwork",
-        },
-        value: 2,
-      },
-      {
-        label: {
-          zh: "大面积覆盖多个可见区域",
-          en: "Large coverage across multiple visible areas",
-        },
-        value: 3,
-      },
+      { key: "A", text: "Chiffon, petals, and glossy wrappers.", resultId: "A2" },
+      { key: "B", text: "Fresh cotton and warm knit sleeves.", resultId: "B1" },
+      { key: "C", text: "Velvet shadow and matte old paper.", resultId: "C2" },
+      { key: "D", text: "Structured leather and brushed metal.", resultId: "D2" },
     ],
   },
   {
-    id: "q6",
-    title: {
-      zh: "6. 特殊结构本身的复杂度",
-      en: "6. Complexity of the special structure itself",
-    },
-    desc: {
-      zh: "例如：翅膀、骨质结构、异形器官、原创特殊轮廓等。",
-      en: "Examples: wings, bony structures, non-human organs, or unique original silhouettes.",
-    },
+    id: 6,
+    prompt: "How do you care for people?",
     options: [
-      {
-        label: {
-          zh: "没有，或只有简单基础结构",
-          en: "None, or only a simple basic structure",
-        },
-        value: 0,
-      },
-      {
-        label: {
-          zh: "有，结构有自然参考、容易理解",
-          en: "Present, but has a natural reference and is easy to understand",
-        },
-        value: 1,
-      },
-      {
-        label: {
-          zh: "结构原创，但结构简单",
-          en: "Original structure, but still simple",
-        },
-        value: 1,
-      },
-      {
-        label: {
-          zh: "结构较复杂，绘制时需要较多判断",
-          en: "Fairly complex and requires extra judgment while drawing",
-        },
-        value: 2,
-      },
-      {
-        label: {
-          zh: "结构原创，且绘制时需要较多判断",
-          en: "Original and complex, requiring a lot of judgment while drawing",
-        },
-        value: 3,
-      },
+      { key: "A", text: "By brightening the mood and making things fun.", resultId: "A3" },
+      { key: "B", text: "By noticing what others need before they ask.", resultId: "B3" },
+      { key: "C", text: "By understanding silently and speaking later.", resultId: "C4" },
+      { key: "D", text: "By solving the problem without fuss.", resultId: "D4" },
     ],
   },
   {
-    id: "m1",
-    title: {
-      zh: "7. 细节还原要求",
-      en: "7. Detail fidelity requirement",
-    },
-    desc: {
-      zh: "本题不直接加分，而是作为最终系数计算。例如：花纹位置、翅膀纹路、装饰角度、配件顺序、发色分层等。如仅希望更贴合画风、允许适当概括，可选较低；如希望细节位置与层次尽量固定还原，请选较高。",
-      en: "This question does not directly add points. Instead, it acts as a final multiplier. Examples include pattern placement, wing markings, decoration angles, accessory order, and hair color layering. Choose a lower option if natural simplification is fine. Choose a higher option if detail placement and layering should be preserved as closely as possible.",
-    },
+    id: 7,
+    prompt: "Pick a palette for your room.",
     options: [
-      {
-        label: {
-          zh: "可自然概括，不要求严格一致",
-          en: "Can be simplified naturally, no strict accuracy needed",
-        },
-        value: 1.0,
-      },
-      {
-        label: {
-          zh: "有较明显的固定位置 / 固定层次要求",
-          en: "There are fairly clear fixed placements / layering requirements",
-        },
-        value: 1.2,
-      },
-      {
-        label: {
-          zh: "需要高度还原，细节不能随意简化",
-          en: "Needs high fidelity, details should not be simplified freely",
-        },
-        value: 1.3,
-      },
+      { key: "A", text: "Peach, strawberry pink, pale yellow, and glitter.", resultId: "A4" },
+      { key: "B", text: "Cream white, washed blue, mint, and soft light.", resultId: "B1" },
+      { key: "C", text: "Dusty violet, plum, old gold, and gray.", resultId: "C4" },
+      { key: "D", text: "Forest green, charcoal, silver, and cold blue.", resultId: "D1" },
+    ],
+  },
+  {
+    id: 8,
+    prompt: "Which scene feels most like you in motion?",
+    options: [
+      { key: "A", text: "Running downhill laughing with candy in hand.", resultId: "A3" },
+      { key: "B", text: "Carrying tea and fixing someone's collar.", resultId: "B2" },
+      { key: "C", text: "Pausing under moonlight like you heard something hidden.", resultId: "C1" },
+      { key: "D", text: "Walking fast through the city without looking back.", resultId: "D3" },
+    ],
+  },
+  {
+    id: 9,
+    prompt: "What kind of charm do you have?",
+    options: [
+      { key: "A", text: "Colorful, sweet, sparkling, and expressive.", resultId: "A4" },
+      { key: "B", text: "Warm, graceful, approachable, and calming.", resultId: "B4" },
+      { key: "C", text: "Sharp, beautiful, and secretly dangerous.", resultId: "C3" },
+      { key: "D", text: "Effortlessly cool and hard to forget.", resultId: "D3" },
+    ],
+  },
+  {
+    id: 10,
+    prompt: "What detail would people remember about you the longest?",
+    options: [
+      { key: "A", text: "A glossy smile and fruit-sweet air.", resultId: "A2" },
+      { key: "B", text: "Clean fabric and a reassuring voice.", resultId: "B1" },
+      { key: "C", text: "A slow glance and the scent of old pages.", resultId: "C2" },
+      { key: "D", text: "A silver watch and exact posture.", resultId: "D4" },
+    ],
+  },
+  {
+    id: 11,
+    prompt: "Which social role fits you best?",
+    options: [
+      { key: "A", text: "The one who makes every plan more fun.", resultId: "A1" },
+      { key: "B", text: "The one everyone feels safe beside.", resultId: "B3" },
+      { key: "C", text: "The one who notices everything quietly.", resultId: "C4" },
+      { key: "D", text: "The one who leads without wasting motion.", resultId: "D4" },
+    ],
+  },
+  {
+    id: 12,
+    prompt: "Which small object feels most like you?",
+    options: [
+      { key: "A", text: "A peach soda bottle charm.", resultId: "A3" },
+      { key: "B", text: "A folded handkerchief that smells clean.", resultId: "B2" },
+      { key: "C", text: "A silver bookmark hiding a dried flower.", resultId: "C1" },
+      { key: "D", text: "A cool metal lighter with a precise click.", resultId: "D2" },
+    ],
+  },
+  {
+    id: 13,
+    prompt: "Key question — what kind of warmth do you hide underneath?",
+    options: [
+      { key: "A", text: "Playful, fizzy, and golden.", resultId: "A4" },
+      { key: "B", text: "Tender, steady, and always there.", resultId: "B4" },
+      { key: "C", text: "Private, deep, and low-burning.", resultId: "C4" },
+      { key: "D", text: "Protective, controlled, and shown through action.", resultId: "D2" },
+    ],
+  },
+  {
+    id: 14,
+    prompt: "Key question — how would your presence spread through a room?",
+    options: [
+      { key: "A", text: "In bright sweet bursts that pull eyes instantly.", resultId: "A3" },
+      { key: "B", text: "Softly, close to the skin like clean cotton.", resultId: "B2" },
+      { key: "C", text: "Slowly, like smoke and violet dusk.", resultId: "C1" },
+      { key: "D", text: "Sharply, with cold edges and dark structure.", resultId: "D3" },
+    ],
+  },
+  {
+    id: 15,
+    prompt: "Final key question — years later, what remains most clearly about you?",
+    options: [
+      { key: "A", text: "A bright smile and candy-colored warmth.", resultId: "A2" },
+      { key: "B", text: "A calm hand, clean fabric, and quiet comfort.", resultId: "B1" },
+      { key: "C", text: "A strange ache and a line you never forgot.", resultId: "C3" },
+      { key: "D", text: "Cold night air, steel, and absolute composure.", resultId: "D1" },
     ],
   },
 ];
 
-const copy = {
-  zh: {
-    quickTest: "Quick Test ✦",
-    pageTitle: "YCH 复杂度快速自测",
-    pageSubtitle: "@莲下梦工作室",
-    switchLang: "EN",
-    switchThemeLight: "切换浅色模式",
-    switchThemeDark: "切换深色模式",
-    introTitle: "七步确定！便捷的角色设计复杂度自测 ✨",
-    introDesc:
-      "本测试会根据您角色的设计复杂程度进行快速判断，方便您在委托前更轻松地确认额外的工时档位，提供更清晰的收费明细 ( •̀ ω •́ )✧",
-    noteTitle: "说明",
-    noteItems: [
-      "为了尽量减少您在委托过程中的额外麻烦，也避免因设定遗漏或复杂度判断偏差而影响您的安排，设计了本测试，方便您在委托前更轻松地确认可能产生的额外支出范围与预算。",
-      "复杂度将简单分为 A / B / C / D 四个等级，您可以先根据设定情况自助选择；如果您暂时不方便判断，也可以直接选择 D（请帮我评估），这边会根据您提供的参考图协助确认更合适的档位与报价，尽量减少您自行判断的负担。",
-      "如设定细节较多、装饰较复杂，或有较高还原需求，部分 B / C 档位可能需要您附上较清晰、完整的参考图，以便这边更准确地理解并绘制您的需求，也尽量减少后续反复补充说明或修改给您带来的不便。",
-    ],
-    tierDescriptions: {
-      A: {
-        title: "A档｜普通 / 轻度复杂设定",
-        summary: "有一定特殊特征或细节，但整体仍较容易处理。",
-        detail:
-          "适用于少量较复杂装饰、局部花纹 / 鳞片 / 疤痕、一定还原需求、少量异形元素混入。",
-      },
-      B: {
-        title: "B档｜中度复杂设定",
-        summary: "信息量较多，特征较集中，或有较高还原要求。",
-        detail:
-          "适用于装饰较多、大面积细节适配、较复杂发色、较明显异形元素、头部装饰较密集。",
-      },
-      C: {
-        title: "C档｜高复杂设定",
-        summary: "整体信息量高，复杂元素覆盖较多，明显超出普通人形适配范围。",
-        detail:
-          "适用于大面积复杂特征、高密度装饰、高还原纹样、四色以上复杂发色、复杂特殊结构。",
-      },
-      D: {
-        title: "D档｜请帮我评估",
-        summary: "如果您暂时不方便判断，或您的设定存在较多边缘情况，可以直接交由我人工评估。",
-        detail:
-          "我会结合您提供的参考图进一步确认更合适的复杂度档位与报价，尽量减少您自行判断的负担。",
-      },
-    },
-    start: "开始测试 ✦",
-    manualDirect: "我不太确定，直接人工评估",
-    qCounter: "第",
-    qSuffix: "题",
-    answered: "已完成",
-    restart: "重新开始",
-    backHome: "返回首页",
-    prev: "上一题",
-    next: "下一题",
-    viewResult: "查看测试结果 ✨",
-    resultTag: "测试结果 ✨",
-    retake: "重新测试",
-    resultMeterTitle: "推荐复杂度",
-    resultMeterHint: "该进度仅展示推荐复杂度等级，不显示计算细节",
-    manualHint: "已切换为人工评估流程",
-    extraTitle: "补充说明",
-    extraBody:
-      "本结果仅用于委托前的快速参考，不作为最终报价的唯一依据。若您的角色存在边缘情况、原创复杂结构或参考不完整，我仍可能根据实际情况进行微调。",
-    switchToManual: "我还是不确定，改为人工评估",
-  },
-  en: {
-    quickTest: "Quick Test ✦",
-    pageTitle: "YCH Complexity Quick Check",
-    pageSubtitle: "@Lotus Dream Studio",
-    switchLang: "中文",
-    switchThemeLight: "Switch to light mode",
-    switchThemeDark: "Switch to dark mode",
-    introTitle: "7 Steps to Check! A Handy Character Design Complexity Test ✨",
-    introDesc:
-      "This quick test gives your character design a fast complexity check, making it easier to estimate any extra workload tier before commissioning and giving you a clearer pricing breakdown ( •̀ ω •́ )✧",
-    noteTitle: "Notes",
-    noteItems: [
-      "To reduce extra hassle during the commission process—and to avoid scheduling issues caused by missing design details or complexity misjudgment—this test was made to help you estimate the possible extra cost range and budget more easily before submitting a request.",
-      "Complexity is roughly divided into four levels: A / B / C / D. You can choose a tier yourself based on your design first; if you're not sure, you can also pick D (Please evaluate for me), and I’ll help confirm a more suitable tier and quote based on the reference images you provide, so you don’t have to stress too much over judging it alone.",
-      "If your design has many details, dense decorations, or requires a high level of accuracy, some B / C tiers may require clearer and more complete reference images, so I can understand and draw your character more accurately—while also reducing the need for repeated clarification or later edits.",
-    ],
-    tierDescriptions: {
-      A: {
-        title: "Tier A | Standard / Light Complexity Design",
-        summary:
-          "The design has some special traits or details, but is still fairly easy to handle overall.",
-        detail:
-          "Suitable for a small number of slightly complex accessories, localized patterns / scales / scars, some fidelity requirements, or a small amount of non-human elements.",
-      },
-      B: {
-        title: "Tier B | Moderately Complex Design",
-        summary:
-          "The design contains more visual information, more concentrated features, or stronger fidelity requirements.",
-        detail:
-          "Suitable for heavier accessory use, larger-area detail adaptation, more complex hair colors, more obvious non-human elements, or denser head decorations.",
-      },
-      C: {
-        title: "Tier C | Highly Complex Design",
-        summary:
-          "The overall information density is high, with more complex elements covering the design, clearly beyond the standard humanoid adaptation range.",
-        detail:
-          "Suitable for large-scale complex traits, high-density accessories, high-fidelity patterns, complex hair colors with four or more colors, or intricate special structures.",
-      },
-      D: {
-        title: "Tier D | Please Evaluate for Me",
-        summary:
-          "If you are not comfortable judging the design yourself, or if it contains many edge-case elements, you can send it for manual review.",
-        detail:
-          "I will check your reference images and help confirm a more suitable complexity tier and quote for you.",
-      },
-    },
-    start: "Start Test ✦",
-    manualDirect: "I'm not sure, let me get manual review",
-    qCounter: "Question",
-    qSuffix: "",
-    answered: "Answered",
-    restart: "Restart",
-    backHome: "Back to Home",
-    prev: "Previous",
-    next: "Next",
-    viewResult: "View Result ✨",
-    resultTag: "Result ✨",
-    retake: "Retake Test",
-    resultMeterTitle: "Recommended Complexity",
-    resultMeterHint:
-      "This meter only shows the recommended complexity tier, not the calculation details",
-    manualHint: "Manual review mode is enabled",
-    extraTitle: "Additional Note",
-    extraBody:
-      "This result is only a quick reference before commissioning and is not the sole basis for final pricing. If your character includes edge cases, original complex structures, or incomplete references, I may still adjust the final classification.",
-    switchToManual: "I'm still unsure, switch to manual review",
-  },
-};
-
-function cls(...parts) {
-  return parts.filter(Boolean).join(" ");
+function cn(...classes) {
+  return classes.filter(Boolean).join(" ");
 }
 
-function getResult(baseScore, multiplier, manualReview, lang) {
-  if (manualReview) {
-    if (lang === "zh") {
-      return {
-        tier: "D",
-        title: "建议直接交由我人工评估",
-        text: "如果您对自己的设定仍不确定，或觉得它存在较多难以归类的元素，可以直接选择人工评估，我会根据参考图为您进一步确认。",
-        level: 1,
-        badge: "D 档｜请帮我评估",
-      };
-    }
-
-    return {
-      tier: "D",
-      title: "Recommended: Manual Review",
-      text: "If you are still unsure about your design, or it contains many hard-to-classify elements, you can choose manual review and I will evaluate it based on the reference.",
-      level: 1,
-      badge: "Tier D | Manual Review",
-    };
-  }
-
-  const finalScore = Math.round(baseScore * multiplier * 10) / 10;
-
-  if (finalScore <= 5) {
-    if (lang === "zh") {
-      return {
-        tier: "A",
-        title: "推荐：A 档｜基础设定",
-        text: "整体仍在常规适配范围内，通常按基础设定处理。",
-        level: 1,
-        badge: "A 档｜基础设定",
-      };
-    }
-
-    return {
-      tier: "A",
-      title: "Recommended: Tier A | Basic Design",
-      text: "The design is still within the normal adaptation range and is usually handled as a basic design.",
-      level: 1,
-      badge: "Tier A | Basic Design",
-    };
-  }
-
-  if (finalScore <= 11) {
-    if (lang === "zh") {
-      return {
-        tier: "B",
-        title: "推荐：B 档｜中度复杂设定",
-        text: "设定信息量较多，或有一定还原要求，已明显超出基础适配范围。",
-        level: 2,
-        badge: "B 档｜中度复杂设定",
-      };
-    }
-
-    return {
-      tier: "B",
-      title: "Recommended: Tier B | Moderately Complex Design",
-      text: "The design contains more information or has stronger fidelity requirements, and is clearly beyond the basic range.",
-      level: 2,
-      badge: "Tier B | Moderately Complex Design",
-    };
-  }
-
-  if (lang === "zh") {
-    return {
-      tier: "C",
-      title: "推荐：C 档｜高复杂设定",
-      text: "整体信息量高，复杂元素密集，明显超出普通人形适配范围。",
-      level: 3,
-      badge: "C 档｜高复杂设定",
-    };
-  }
-
-  return {
-    tier: "C",
-    title: "Recommended: Tier C | Highly Complex Design",
-    text: "The design is information-dense and filled with complex elements, clearly beyond the standard humanoid adaptation range.",
-    level: 3,
-    badge: "Tier C | Highly Complex Design",
-  };
+function formatFamilyList(list) {
+  if (!list.length) return "None";
+  if (list.length === 1) return FAMILY_META[list[0]].name;
+  return list.map((k) => FAMILY_META[k].name).join(" / ");
 }
 
-function ThemeButton({ darkMode, onClick, label }) {
+function DecorativeLayer({ night }) {
+  const blobs = [
+    "left-[5%] top-[8%] h-32 w-32",
+    "right-[10%] top-[12%] h-40 w-40",
+    "left-[12%] bottom-[16%] h-28 w-28",
+    "right-[8%] bottom-[10%] h-24 w-24",
+  ];
+
+  const bubbles = [
+    { left: "8%", size: 36, delay: 0, duration: 10 },
+    { left: "18%", size: 22, delay: 2, duration: 12 },
+    { left: "31%", size: 54, delay: 1, duration: 11 },
+    { left: "46%", size: 28, delay: 4, duration: 9 },
+    { left: "58%", size: 44, delay: 3, duration: 13 },
+    { left: "69%", size: 24, delay: 6, duration: 10 },
+    { left: "81%", size: 58, delay: 2.5, duration: 12 },
+    { left: "91%", size: 30, delay: 5, duration: 11 },
+  ];
+
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cls(
-        "inline-flex h-11 items-center justify-center rounded-2xl border px-4 text-sm font-bold transition",
-        darkMode
-          ? "border-violet-400/30 bg-violet-400/10 text-violet-100 hover:bg-violet-400/15"
-          : "border-rose-200 bg-white/80 text-rose-700 hover:bg-rose-50"
-      )}
-    >
-      {label}
-    </button>
-  );
-}
+    <div className="pointer-events-none absolute inset-0 overflow-hidden">
+      {blobs.map((cls, i) => (
+        <motion.div
+          key={`blob-${i}`}
+          className={cn(
+            "absolute rounded-full blur-3xl",
+            cls,
+            night ? (i % 2 === 0 ? "bg-violet-500/12" : "bg-sky-400/10") : i % 2 === 0 ? "bg-pink-300/25" : "bg-cyan-300/20"
+          )}
+          animate={{
+            y: [0, -18, 8, 0],
+            x: [0, 12, -10, 0],
+            scale: [1, 1.08, 0.96, 1],
+          }}
+          transition={{ duration: 10 + i * 2, repeat: Infinity, ease: "easeInOut" }}
+        />
+      ))}
 
-function LangButton({ darkMode, onClick, label }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cls(
-        "inline-flex h-11 items-center justify-center rounded-2xl border px-4 text-sm font-bold transition",
-        darkMode
-          ? "border-violet-400/30 bg-white/5 text-violet-100 hover:bg-white/10"
-          : "border-rose-200 bg-white/80 text-rose-700 hover:bg-rose-50"
-      )}
-    >
-      {label}
-    </button>
-  );
-}
+      {bubbles.map((bubble, i) => (
+        <motion.div
+          key={`bubble-${i}`}
+          className={cn(
+            "absolute bottom-[-10%] rounded-full border backdrop-blur-sm",
+            night ? "border-white/10 bg-white/5" : "border-white/60 bg-white/20"
+          )}
+          style={{ left: bubble.left, width: bubble.size, height: bubble.size }}
+          initial={{ y: 120, opacity: 0, scale: 0.7 }}
+          animate={{ y: -980, opacity: [0, 0.28, 0.18, 0], scale: [0.7, 1, 1.08, 1.16] }}
+          transition={{
+            duration: bubble.duration,
+            delay: bubble.delay,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+      ))}
 
-function Surface({ darkMode, className = "", children }) {
-  return (
-    <div
-      className={cls(
-        "rounded-[28px] border p-5 shadow-sm backdrop-blur-sm md:p-7",
-        darkMode
-          ? "border-violet-400/20 bg-[#1f1630]/85 shadow-black/20"
-          : "border-rose-200/80 bg-white/85 shadow-rose-100/70",
-        className
-      )}
-    >
-      {children}
+      {Array.from({ length: 20 }).map((_, i) => (
+        <motion.div
+          key={`spark-${i}`}
+          className={cn("absolute h-1.5 w-1.5 rounded-full", night ? "bg-white/40" : "bg-white/75")}
+          style={{ left: `${(i * 17) % 100}%`, top: `${(i * 11) % 100}%` }}
+          animate={{ opacity: [0.2, 0.85, 0.2], scale: [0.9, 1.2, 0.9] }}
+          transition={{ duration: 2 + (i % 4), repeat: Infinity, delay: i * 0.12 }}
+        />
+      ))}
     </div>
   );
 }
 
-function OptionButton({ active, onClick, children, darkMode }) {
+function ProgressBar({ night, value }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cls(
-        "w-full rounded-3xl border px-4 py-4 text-left transition",
-        darkMode
-          ? active
-            ? "border-violet-300 bg-violet-400/20 text-white shadow-sm"
-            : "border-violet-400/20 bg-white/5 text-violet-50 hover:border-violet-300/40 hover:bg-white/10"
-          : active
-            ? "border-rose-300 bg-rose-100 text-rose-950 shadow-sm"
-            : "border-rose-200 bg-white text-zinc-800 hover:border-rose-300 hover:bg-rose-50"
-      )}
-    >
-      <div className="flex items-start gap-3">
-        <span
-          className={cls(
-            "mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-xs",
-            darkMode
-              ? active
-                ? "border-violet-200 bg-violet-200 text-violet-900"
-                : "border-violet-300/40 text-violet-200"
-              : active
-                ? "border-rose-400 bg-rose-400 text-white"
-                : "border-rose-300 text-rose-400"
-          )}
-        >
-          {active ? "✓" : ""}
-        </span>
-        <span className="text-sm leading-6 md:text-[15px]">{children}</span>
-      </div>
-    </button>
-  );
-}
-
-function ProgressBar({ value, darkMode }) {
-  return (
-    <div
-      className={cls(
-        "h-3 w-full overflow-hidden rounded-full",
-        darkMode ? "bg-white/10" : "bg-rose-100"
-      )}
-    >
-      <div
-        className={cls(
-          "h-full rounded-full transition-all duration-300",
-          darkMode
-            ? "bg-gradient-to-r from-fuchsia-300 via-violet-300 to-indigo-300"
-            : "bg-gradient-to-r from-pink-300 via-rose-300 to-fuchsia-300"
+    <div className={cn("h-3 overflow-hidden rounded-full", night ? "bg-white/8" : "bg-black/5")}>
+      <motion.div
+        className={cn(
+          "h-full rounded-full bg-gradient-to-r from-pink-300 via-sky-200 to-violet-300",
+          night && "from-pink-400/45 via-sky-400/35 to-violet-400/45"
         )}
-        style={{ width: `${value}%` }}
+        animate={{ width: `${value}%` }}
+        transition={{ duration: 0.35, ease: "easeOut" }}
       />
     </div>
   );
 }
 
-function LevelMeter({ level, darkMode, manualReview }) {
-  const labels = manualReview ? ["D"] : ["A", "B", "C"];
+function ResultSection({ result, night, onRestart, onShare, shareBusy, toast }) {
+  const cardRef = useRef(null);
+  const scent = RESULTS[result.resultId];
+  const family = FAMILY_META[result.mainFamily];
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.__shareCardRef = cardRef;
+    }
+  }, []);
+
+  const scoreRows = Object.keys(FAMILY_META).map((key) => ({
+    key,
+    name: FAMILY_META[key].name,
+    emoji: FAMILY_META[key].emoji,
+    score: result.familyScores[key],
+  }));
 
   return (
-    <div className="space-y-3">
-      <div className="flex gap-2">
-        {labels.map((label, idx) => {
-          const active = idx < level;
-          return (
-            <div
-              key={label}
-              className={cls(
-                "h-3 flex-1 rounded-full transition",
-                active
-                  ? darkMode
-                    ? "bg-gradient-to-r from-fuchsia-300 to-violet-300"
-                    : "bg-gradient-to-r from-pink-300 to-rose-400"
-                  : darkMode
-                    ? "bg-white/10"
-                    : "bg-rose-100"
-              )}
-            />
-          );
-        })}
+    <div className="space-y-4">
+      <div className="mx-auto flex w-full max-w-4xl flex-wrap items-center justify-center gap-3">
+        <span className={cn("rounded-full border px-4 py-2 text-sm font-medium", night ? "border-white/10 bg-white/5 text-white" : "border-black/5 bg-white/80 text-slate-700")}>
+          {family.emoji} Main family: {family.longName}
+        </span>
+        <span className={cn("rounded-full border px-4 py-2 text-sm", night ? "border-white/10 bg-white/5 text-white/70" : "border-black/5 bg-white/80 text-slate-600")}>
+          Secondary lean: {formatFamilyList(result.secondaryFamilies)}
+        </span>
       </div>
+
+      <motion.div
+        ref={cardRef}
+        initial={{ opacity: 0, y: 20, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        className={cn(
+          "relative mx-auto w-full max-w-4xl overflow-hidden rounded-[34px] border p-5 md:p-6",
+          night ? "border-white/10 bg-slate-950/80 text-white" : "border-white/70 bg-white/85 text-slate-900",
+          "shadow-2xl backdrop-blur-xl"
+        )}
+      >
+        <div className={cn("absolute inset-0 bg-gradient-to-br opacity-80", night ? family.nightGlow : family.glow)} />
+        <div className={cn("absolute inset-0", night ? "bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),transparent_35%)]" : "bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.88),transparent_35%)]")} />
+
+        <div className="relative flex flex-col gap-4">
+          <div className="space-y-4">
+            <div>
+                <h2 className="text-2xl font-semibold leading-tight md:text-4xl">
+                  {family.emoji} {scent.title}
+                </h2>
+              </div>
+
+            <p className={cn("text-base md:text-lg", night ? "text-white/85" : "text-slate-700")}>
+              {scent.vibe}
+            </p>
+
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className={cn("rounded-3xl border p-4", night ? "border-white/10 bg-white/5" : "border-black/5 bg-white/70")}>
+                <p className={cn("mb-2 text-xs font-semibold uppercase tracking-[0.22em]", night ? "text-white/55" : "text-slate-500")}>
+                  Scent Story
+                </p>
+                <p className={cn("text-sm leading-7", night ? "text-white/82" : "text-slate-700")}>
+                  {scent.description}
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <div className={cn("rounded-3xl border p-4", night ? "border-white/10 bg-white/5" : "border-black/5 bg-white/70")}>
+                  <p className={cn("mb-2 text-xs font-semibold uppercase tracking-[0.22em]", night ? "text-white/55" : "text-slate-500")}>
+                    Keywords
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {scent.keywords.map((keyword) => (
+                      <span
+                        key={keyword}
+                        className={cn("rounded-full border px-3 py-1 text-xs md:text-sm", night ? "border-white/10 bg-white/5 text-white/80" : "border-black/5 bg-white text-slate-700")}
+                      >
+                        {keyword}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className={cn("rounded-3xl border p-4", night ? "border-white/10 bg-white/5" : "border-black/5 bg-white/70")}>
+                  <p className={cn("mb-2 text-xs font-semibold uppercase tracking-[0.22em]", night ? "text-white/55" : "text-slate-500")}>
+                    Fits characters like
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {scent.fits.map((item) => (
+                      <span
+                        key={item}
+                        className={cn("rounded-full border px-3 py-1 text-xs md:text-sm", night ? "border-white/10 bg-white/5 text-white/80" : "border-black/5 bg-white text-slate-700")}
+                      >
+                        {item}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-[1.15fr_0.85fr]">
+            <div className={cn("rounded-3xl border p-4", night ? "border-white/10 bg-white/5" : "border-black/5 bg-white/70")}>
+              <p className={cn("mb-3 text-xs font-semibold uppercase tracking-[0.22em]", night ? "text-white/55" : "text-slate-500")}>
+                Family Scores
+              </p>
+              <div className="space-y-3">
+                {scoreRows.map((row) => {
+                  const pct = Math.max(8, Math.round((row.score / 18) * 100));
+                  return (
+                    <div key={row.key} className="space-y-1.5">
+                      <div className="flex items-center justify-between text-sm">
+                        <span>
+                          {row.emoji} {row.name}
+                        </span>
+                        
+                      </div>
+                      <div className={cn("h-2.5 overflow-hidden rounded-full", night ? "bg-white/10" : "bg-black/5")}>
+                        <div
+                          className={cn("h-full rounded-full bg-gradient-to-r", night ? FAMILY_META[row.key].nightGlow : FAMILY_META[row.key].glow)}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className={cn("rounded-3xl border p-4", night ? "border-white/10 bg-white/5" : "border-black/5 bg-white/70")}>
+              <p className={cn("mb-3 text-xs font-semibold uppercase tracking-[0.22em]", night ? "text-white/55" : "text-slate-500")}>
+                Actions
+              </p>
+              <div className="space-y-3 text-center">
+                <motion.button
+                  onClick={onShare}
+                  disabled={shareBusy}
+                  whileHover={{ y: -2, scale: 1.015 }}
+                  whileTap={{ scale: 0.99 }}
+                  animate={{ backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }}
+                  transition={{ backgroundPosition: { duration: 8, repeat: Infinity, ease: "linear" } }}
+                  className="mx-auto flex w-full max-w-xs items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold text-slate-900 shadow-xl transition disabled:opacity-70"
+                  style={{
+                    backgroundImage:
+                      "linear-gradient(90deg, rgba(255,190,210,0.95), rgba(190,235,255,0.95), rgba(221,214,255,0.95), rgba(255,241,176,0.95), rgba(255,190,210,0.95))",
+                    backgroundSize: "220% 220%",
+                  }}
+                >
+                  <Share2 className="h-4 w-4" />
+                  {shareBusy ? "Preparing..." : "Share result"}
+                </motion.button>
+
+                <a href="https://vgen.co/Fur31mu" target="_blank" rel="noreferrer" className={cn("mx-auto flex w-full max-w-xs items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm transition hover:-translate-y-0.5", night ? "border-white/10 bg-white/5 text-white" : "border-black/5 bg-white text-slate-800")}>My VGen <ExternalLink className="h-4 w-4" /></a>
+                <a href="https://x.com/Fur31mu" target="_blank" rel="noreferrer" className={cn("mx-auto flex w-full max-w-xs items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm transition hover:-translate-y-0.5", night ? "border-white/10 bg-white/5 text-white" : "border-black/5 bg-white text-slate-800")}>My X <ExternalLink className="h-4 w-4" /></a>
+                <button onClick={onRestart} className={cn("mx-auto flex w-full max-w-xs items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm transition hover:-translate-y-0.5", night ? "border-white/10 bg-white/5 text-white" : "border-black/5 bg-white text-slate-800")}>
+                  <RotateCcw className="h-4 w-4" />
+                  Try again
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
+      <AnimatePresence>
+        {toast ? (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            className={cn("fixed bottom-5 left-1/2 z-50 -translate-x-1/2 rounded-full px-4 py-2 text-sm shadow-2xl", night ? "bg-white text-slate-900" : "bg-slate-900 text-white")}
+          >
+            {toast}
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </div>
   );
 }
 
-export default function App() {
-  const [darkMode, setDarkMode] = useState(false);
-  const [lang, setLang] = useState("zh");
-  const [page, setPage] = useState("intro");
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [manualReview, setManualReview] = useState(false);
-  const [answers, setAnswers] = useState({});
-
-  const ui = copy[lang];
-  const total = questionBank.length;
-  const currentQuestion = questionBank[currentIndex];
-
-  const currentSelectedIndex =
-    currentQuestion && answers[currentQuestion.id] !== undefined
-      ? answers[currentQuestion.id]
-      : undefined;
-
-  const answeredCount = Object.keys(answers).length;
-  const progress = Math.round((answeredCount / total) * 100);
-
-  function getAnswerValue(id, fallback = 0) {
-    const question = questionBank.find((item) => item.id === id);
-    const selectedIndex = answers[id];
-
-    if (!question || selectedIndex === undefined) {
-      return fallback;
-    }
-
-    return question.options[selectedIndex]?.value ?? fallback;
-  }
-
-  const result = useMemo(() => {
-    const baseScore =
-      Number(getAnswerValue("q1", 0)) +
-      Number(getAnswerValue("q2", 0)) +
-      Number(getAnswerValue("q3", 0)) +
-      Number(getAnswerValue("q4", 0)) +
-      Number(getAnswerValue("q5", 0)) +
-      Number(getAnswerValue("q6", 0));
-
-    const multiplier = Number(getAnswerValue("m1", 1.0));
-
-    return getResult(baseScore, multiplier, manualReview, lang);
-  }, [answers, manualReview, lang]);
-
-  const tierDetail = ui.tierDescriptions[result.tier];
-
-  function startTest() {
-    setPage("quiz");
-    setCurrentIndex(0);
-  }
-
-  function resetAll() {
-    setAnswers({});
-    setCurrentIndex(0);
-    setManualReview(false);
-    setPage("intro");
-  }
-
-  function handleChoose(index) {
-    setAnswers((prev) => ({
-      ...prev,
-      [currentQuestion.id]: index,
-    }));
-  }
-
-  function handleNext() {
-    if (currentSelectedIndex === undefined) {
-      return;
-    }
-
-    if (currentIndex === total - 1) {
-      setPage("result");
-      return;
-    }
-
-    setCurrentIndex((prev) => prev + 1);
-  }
-
-  function handlePrev() {
-    if (currentIndex === 0) {
-      setPage("intro");
-      return;
-    }
-
-    setCurrentIndex((prev) => prev - 1);
-  }
-
-  const wrapperClass = darkMode
-    ? "min-h-screen bg-[radial-gradient(circle_at_top,#3a2559_0%,#170f24_48%,#100b19_100%)] text-white"
-    : "min-h-screen bg-[radial-gradient(circle_at_top,#ffeaf3_0%,#fff7fb_42%,#fffdfd_100%)] text-zinc-900";
-
+function IntroSection({ night, onStart }) {
   return (
-    <div className={wrapperClass}>
-      <div className="mx-auto max-w-4xl px-4 py-8 md:px-6 md:py-10">
-        <div className="mb-6 flex items-center justify-between gap-3">
-          <div>
-            <p
-              className={cls(
-                "text-sm font-bold",
-                darkMode ? "text-violet-200/80" : "text-rose-500"
-              )}
-            >
-              {ui.quickTest}
-            </p>
-            <h1 className="mt-1 text-2xl font-bold tracking-tight md:text-4xl">
-              {ui.pageTitle}
-            </h1>
-            <p
-              className={cls(
-                "mt-1 text-xs md:text-sm",
-                darkMode ? "text-violet-200/70" : "text-rose-400"
-              )}
-            >
-              {ui.pageSubtitle}
-            </p>
-          </div>
+    <motion.section
+      key="intro"
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -12 }}
+      transition={{ duration: 0.35 }}
+      className="mx-auto max-w-4xl"
+    >
+      <div className={cn("rounded-[34px] border p-6 md:p-8", night ? "border-white/10 bg-white/5" : "border-white/70 bg-white/80 shadow-[0_24px_70px_rgba(255,182,225,0.16)]")}>
+        <h2 className="mx-auto max-w-2xl text-center text-3xl font-semibold leading-tight md:text-5xl">
+          What's your perfume aura?
+        </h2>
+        <p className={cn("mx-auto mt-4 max-w-2xl text-center text-base leading-7 md:text-lg", night ? "text-white/74" : "text-slate-600")}>
+          A simple and quick test—step into this fantasy dream and explore the scent hidden in your soul.
+        </p>
 
-          <div className="flex items-center gap-2">
-            <LangButton
-              darkMode={darkMode}
-              onClick={() => setLang((prev) => (prev === "zh" ? "en" : "zh"))}
-              label={ui.switchLang}
-            />
-            <ThemeButton
-              darkMode={darkMode}
-              onClick={() => setDarkMode((prev) => !prev)}
-              label={darkMode ? ui.switchThemeLight : ui.switchThemeDark}
-            />
-          </div>
+        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+          {Object.entries(FAMILY_META).map(([key, item]) => (
+            <div key={key} className={cn("rounded-3xl border p-4", night ? "border-white/10 bg-white/5" : "border-black/5 bg-white/70")}>
+              <div className="mb-2 flex items-center gap-2 text-lg font-medium">
+                {item.emoji} {item.name}
+              </div>
+              <div className={cn("h-2 rounded-full bg-gradient-to-r", night ? item.nightGlow : item.glow)} />
+            </div>
+          ))}
         </div>
 
-        {page === "intro" && (
-          <div className="space-y-5">
-            <Surface darkMode={darkMode}>
-              <h2 className="text-xl font-bold md:text-3xl">
-                {ui.introTitle}
-              </h2>
+        <div className="mt-8 flex justify-center">
+          <motion.button
+            onClick={onStart}
+            whileHover={{ y: -2, scale: 1.015 }}
+            whileTap={{ scale: 0.99 }}
+            animate={{ backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }}
+            transition={{ backgroundPosition: { duration: 8, repeat: Infinity, ease: "linear" } }}
+            className="inline-flex items-center gap-3 rounded-full px-6 py-3 text-sm font-semibold text-slate-900 shadow-xl md:text-base"
+            style={{
+              backgroundImage:
+                "linear-gradient(90deg, rgba(255,190,210,0.95), rgba(190,235,255,0.95), rgba(221,214,255,0.95), rgba(255,241,176,0.95), rgba(255,190,210,0.95))",
+              backgroundSize: "220% 220%",
+            }}
+          >
+            <span aria-hidden="true">❤</span>
+            <span>Start the quiz</span>
+            <span aria-hidden="true">❤</span>
+          </motion.button>
+        </div>
+      </div>
+    </motion.section>
+  );
+}
 
-              <p
-                className={cls(
-                  "mt-4 max-w-3xl text-sm leading-7 md:text-[15px]",
-                  darkMode ? "text-violet-100/80" : "text-zinc-600"
-                )}
-              >
-                {ui.introDesc}
-              </p>
+function QuizSection({ night, question, current, total, progress, onPick }) {
+  return (
+    <motion.section
+      key={`quiz-${question.id}`}
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -12 }}
+      transition={{ duration: 0.28 }}
+      className="mx-auto max-w-4xl"
+    >
+      <div className={cn("mb-4 rounded-[28px] border p-4 md:p-5", night ? "border-white/10 bg-white/5" : "border-white/70 bg-white/80")}>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3 text-sm">
+          <span className={night ? "text-white/70" : "text-slate-600"}>
+            Question {current + 1} / {total}
+          </span>
+          <span className={cn("rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em]", current >= 12 ? night ? "border-violet-400/30 bg-violet-500/10 text-violet-200" : "border-violet-200 bg-violet-50 text-violet-700" : night ? "border-white/10 bg-white/5 text-white/60" : "border-black/5 bg-white text-slate-500")}>
+            {current >= 12 ? "Key question · 2 points" : "Standard question · 1 point"}
+          </span>
+        </div>
+        <ProgressBar night={night} value={progress} />
+      </div>
 
-              <div
-                className={cls(
-                  "mt-5 rounded-3xl border p-4 text-sm leading-7 md:p-5 md:text-[15px]",
-                  darkMode
-                    ? "border-violet-400/20 bg-white/5 text-violet-100/85"
-                    : "border-rose-200 bg-rose-50/70 text-zinc-700"
-                )}
-              >
-                <div className="font-bold">{ui.noteTitle}</div>
-                <ul className="mt-2 space-y-1.5">
-                  {ui.noteItems.map((item) => (
-                    <li key={item}>• {item}</li>
-                  ))}
-                </ul>
-              </div>
+      <div className={cn("rounded-[34px] border p-6 md:p-8", night ? "border-white/10 bg-white/5" : "border-white/70 bg-white/85 shadow-[0_24px_70px_rgba(255,182,225,0.14)]")}>
+        <h2 className="max-w-3xl text-2xl font-semibold leading-tight md:text-4xl">{question.prompt}</h2>
 
-              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-                <button
-                  type="button"
-                  onClick={startTest}
-                  className={cls(
-                    "inline-flex h-12 items-center justify-center rounded-2xl px-5 text-sm font-bold transition",
-                    darkMode
-                      ? "bg-gradient-to-r from-fuchsia-300 to-violet-300 text-violet-950 hover:opacity-95"
-                      : "bg-gradient-to-r from-pink-300 to-rose-400 text-white hover:opacity-95"
-                  )}
-                >
-                  {ui.start}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setManualReview(true);
-                    setPage("result");
-                  }}
-                  className={cls(
-                    "inline-flex h-12 items-center justify-center rounded-2xl border px-5 text-sm font-bold transition",
-                    darkMode
-                      ? "border-violet-400/25 bg-white/5 text-violet-100 hover:bg-white/10"
-                      : "border-rose-200 bg-white text-rose-700 hover:bg-rose-50"
-                  )}
-                >
-                  {ui.manualDirect}
-                </button>
-              </div>
-            </Surface>
-          </div>
-        )}
-
-        {page === "quiz" && currentQuestion && (
-          <div className="space-y-5">
-            <Surface darkMode={darkMode}>
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="space-y-2">
-                  <div
-                    className={cls(
-                      "text-sm font-bold",
-                      darkMode ? "text-violet-200/80" : "text-rose-500"
-                    )}
-                  >
-                    {lang === "zh"
-                      ? `${ui.qCounter} ${currentIndex + 1} / ${total} ${ui.qSuffix}`
-                      : `${ui.qCounter} ${currentIndex + 1} / ${total}`}
-                  </div>
-
-                  <div
-                    className={cls(
-                      "text-sm",
-                      darkMode ? "text-violet-200/80" : "text-rose-500"
-                    )}
-                  >
-                    {ui.answered} {answeredCount} / {total}
-                  </div>
+        <div className="mt-6 grid gap-4">
+          {question.options.map((option) => (
+            <motion.button
+              key={`${question.id}-${option.key}`}
+              whileHover={{ y: -2, scale: 1.01 }}
+              whileTap={{ scale: 0.99 }}
+              onClick={() => onPick(option)}
+              className={cn("group relative overflow-hidden rounded-[28px] border p-5 text-left transition", night ? "border-white/10 bg-white/5 hover:bg-white/10" : "border-black/5 bg-white/80 hover:bg-white")}
+            >
+              <div className={cn("absolute inset-0 bg-gradient-to-r opacity-75", night ? FAMILY_META[option.key].nightGlow : FAMILY_META[option.key].glow)} />
+              <div className={cn("absolute inset-[1px] rounded-[27px]", night ? "bg-slate-950/72" : "bg-white/88")} />
+              <div className="relative flex gap-4">
+                <div className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border text-sm font-semibold", night ? "border-white/10 bg-white/5 text-white" : "border-black/5 bg-white text-slate-700")}>
+                  {option.key}
                 </div>
-
-                <button
-                  type="button"
-                  onClick={resetAll}
-                  className={cls(
-                    "inline-flex h-10 items-center justify-center rounded-2xl border px-4 text-sm font-bold transition",
-                    darkMode
-                      ? "border-violet-400/25 bg-white/5 text-violet-100 hover:bg-white/10"
-                      : "border-rose-200 bg-white text-rose-700 hover:bg-rose-50"
-                  )}
-                >
-                  {ui.restart}
-                </button>
+                <p className={cn("text-sm leading-7 md:text-base", night ? "text-white/86" : "text-slate-700")}>
+                  {option.text}
+                </p>
               </div>
+            </motion.button>
+          ))}
+        </div>
+      </div>
+    </motion.section>
+  );
+}
 
-              <div className="mt-4">
-                <ProgressBar value={progress} darkMode={darkMode} />
-              </div>
-            </Surface>
+function computeResult(answers) {
+  const familyScores = { A: 0, B: 0, C: 0, D: 0 };
+  const subScores = Object.fromEntries(Object.keys(RESULTS).map((key) => [key, 0]));
 
-            <Surface darkMode={darkMode}>
-              <h2 className="text-xl font-bold md:text-2xl">
-                {currentQuestion.title[lang]}
-              </h2>
+  answers.forEach((answer, index) => {
+    const weight = index >= 12 ? 2 : 1;
+    familyScores[answer.key] += weight;
+    subScores[answer.resultId] += weight;
+  });
 
-              <p
-                className={cls(
-                  "mt-3 text-sm leading-7 md:text-[15px]",
-                  darkMode ? "text-violet-100/80" : "text-zinc-600"
-                )}
+  const topScore = Math.max(...Object.values(familyScores));
+  let mainCandidates = Object.keys(familyScores).filter((key) => familyScores[key] === topScore);
+
+  if (mainCandidates.length > 1 && answers.length > 0) {
+    mainCandidates = [answers[answers.length - 1].key];
+  }
+
+  const mainFamily = mainCandidates[0] || "A";
+  const otherScores = Object.entries(familyScores)
+    .filter(([key]) => key !== mainFamily)
+    .map(([, value]) => value);
+  const secondScore = otherScores.length ? Math.max(...otherScores) : 0;
+  const secondaryFamilies = Object.keys(familyScores).filter((key) => key !== mainFamily && familyScores[key] === secondScore && secondScore > 0);
+
+  const subtypeCandidates = Object.keys(RESULTS).filter((id) => RESULTS[id].family === mainFamily);
+  let best = subtypeCandidates[0];
+  let bestScore = -1;
+
+  subtypeCandidates.forEach((id) => {
+    if (subScores[id] > bestScore) {
+      best = id;
+      bestScore = subScores[id];
+    } else if (subScores[id] === bestScore) {
+      const lastHit = [...answers].reverse().find((item) => item.resultId === id || item.resultId === best);
+      if (lastHit?.resultId === id) best = id;
+    }
+  });
+
+  return {
+    mainFamily,
+    secondaryFamilies,
+    resultId: best,
+    familyScores,
+    subScores,
+  };
+}
+
+export default function CharacterPerfumeQuizApp() {
+  const [night, setNight] = useState(false);
+  const [step, setStep] = useState("intro");
+  const [current, setCurrent] = useState(0);
+  const [answers, setAnswers] = useState([]);
+  const [toast, setToast] = useState("");
+  const [shareBusy, setShareBusy] = useState(false);
+
+  useEffect(() => {
+    const media = window.matchMedia?.("(prefers-color-scheme: dark)");
+    if (media?.matches) setNight(true);
+  }, []);
+
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(""), 2400);
+    return () => clearTimeout(timer);
+  }, [toast]);
+
+  const progress = useMemo(() => {
+    if (step === "result") return 100;
+    return Math.max(0, ((current + (step === "quiz" ? 1 : 0)) / QUESTIONS.length) * 100);
+  }, [current, step]);
+
+  const currentQuestion = QUESTIONS[current];
+  const result = useMemo(() => (answers.length === QUESTIONS.length ? computeResult(answers) : null), [answers]);
+
+  const handleStart = () => {
+    setAnswers([]);
+    setCurrent(0);
+    setStep("quiz");
+  };
+
+  const handleRestart = () => {
+    setAnswers([]);
+    setCurrent(0);
+    setStep("intro");
+  };
+
+  const handlePick = (option) => {
+    const next = [...answers, { questionId: currentQuestion.id, key: option.key, resultId: option.resultId }];
+    setAnswers(next);
+
+    if (current === QUESTIONS.length - 1) {
+      setStep("result");
+      return;
+    }
+
+    setCurrent((prev) => prev + 1);
+  };
+
+  const handleShare = async () => {
+    const baseText = result
+      ? [
+          `I got ${RESULTS[result.resultId].title} in Character Perfume Quiz ✨`,
+          `Main family: ${FAMILY_META[result.mainFamily].longName}`,
+          `Secondary lean: ${formatFamilyList(result.secondaryFamilies)}`,
+          `VGen: https://vgen.co/Fur31mu`,
+          `X: https://x.com/Fur31mu`,
+        ].join("\n")
+      : "Character Perfume Quiz by Fur31mu\nVGen: https://vgen.co/Fur31mu\nX: https://x.com/Fur31mu";
+
+    try {
+      await navigator.clipboard.writeText(baseText);
+    } catch (error) {
+      console.error(error);
+    }
+
+    if (!result) {
+      setToast("Share text copied.");
+      return;
+    }
+
+    setShareBusy(true);
+    try {
+      const html2canvasModule = await import("html2canvas");
+      const html2canvas = html2canvasModule.default;
+      const node = window.__shareCardRef?.current;
+      if (!node) throw new Error("Share card not found");
+
+      const canvas = await html2canvas(node, {
+        scale: 2,
+        backgroundColor: null,
+        useCORS: true,
+      });
+
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+      if (!blob) throw new Error("Failed to create PNG");
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `fur31mu-perfume-aura-${result.resultId}.png`;
+      link.click();
+      URL.revokeObjectURL(url);
+
+      setToast("Share text copied. Result card saved as PNG.");
+    } catch (error) {
+      console.error(error);
+      setToast("Share text copied.");
+    } finally {
+      setShareBusy(false);
+    }
+  };
+
+  return (
+    <div className={cn("min-h-screen overflow-hidden transition-colors duration-500", night ? "bg-slate-950 text-white" : "bg-[#fff9fe] text-slate-900")}>
+      <style>{`
+        ::selection { background: rgba(255, 182, 225, 0.35); }
+        html { scroll-behavior: smooth; }
+      `}</style>
+
+      <div className={cn("relative min-h-screen", night ? "bg-[radial-gradient(circle_at_top,rgba(124,58,237,0.16),transparent_30%),linear-gradient(180deg,#0a0f1f_0%,#090b12_100%)]" : "bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.95),transparent_30%),linear-gradient(180deg,#fff8fb_0%,#f7fbff_100%)]")}>
+        <DecorativeLayer night={night} />
+
+        <div className="relative mx-auto max-w-6xl px-4 py-6 md:px-6 md:py-8">
+          <header className={cn("mx-auto mb-6 flex w-full max-w-4xl flex-col items-center justify-center gap-4 rounded-[28px] border px-5 py-4 backdrop-blur-xl", night ? "border-white/10 bg-white/5" : "border-white/70 bg-white/75 shadow-[0_20px_60px_rgba(255,182,225,0.15)]")}>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <button onClick={handleRestart} className={cn("inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm transition hover:-translate-y-0.5", night ? "border-white/10 bg-white/5 text-white" : "border-black/5 bg-white text-slate-700")}>
+                <Home className="h-4 w-4" />
+                Home
+              </button>
+              <button onClick={handleShare} className={cn("inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm transition hover:-translate-y-0.5", night ? "border-white/10 bg-white/5 text-white" : "border-black/5 bg-white text-slate-700")}>
+                <Share2 className="h-4 w-4" />
+                Share
+              </button>
+              <a href="https://vgen.co/Fur31mu" target="_blank" rel="noreferrer" className={cn("rounded-full border px-4 py-2 text-sm transition hover:-translate-y-0.5", night ? "border-white/10 bg-white/5 text-white" : "border-black/5 bg-white text-slate-700")}>My VGen</a>
+              <a href="https://x.com/Fur31mu" target="_blank" rel="noreferrer" className={cn("rounded-full border px-4 py-2 text-sm transition hover:-translate-y-0.5", night ? "border-white/10 bg-white/5 text-white" : "border-black/5 bg-white text-slate-700")}>My X</a>
+              <button onClick={() => setNight((v) => !v)} className={cn("inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm transition hover:-translate-y-0.5", night ? "border-white/10 bg-white/5 text-white" : "border-black/5 bg-white text-slate-700")}>
+                {night ? <SunMedium className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                {night ? "Day mode" : "Night mode"}
+              </button>
+            </div>
+          </header>
+
+          <AnimatePresence mode="wait">
+            {step === "intro" && <IntroSection night={night} onStart={handleStart} />}
+
+            {step === "quiz" && currentQuestion && (
+              <QuizSection
+                night={night}
+                question={currentQuestion}
+                current={current}
+                total={QUESTIONS.length}
+                progress={progress}
+                onPick={handlePick}
+              />
+            )}
+
+            {step === "result" && result && (
+              <motion.section
+                key="result"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.35 }}
               >
-                {currentQuestion.desc[lang]}
-              </p>
+                <ResultSection
+                  result={result}
+                  night={night}
+                  onRestart={handleRestart}
+                  onShare={handleShare}
+                  shareBusy={shareBusy}
+                  toast={toast}
+                />
+              </motion.section>
+            )}
+          </AnimatePresence>
 
-              <div className="mt-6 space-y-3">
-                {currentQuestion.options.map((option, index) => (
-                  <OptionButton
-                    key={`${currentQuestion.id}-${index}`}
-                    active={currentSelectedIndex === index}
-                    onClick={() => handleChoose(index)}
-                    darkMode={darkMode}
-                  >
-                    {option.label[lang]}
-                  </OptionButton>
-                ))}
-              </div>
-
-              <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
-                <button
-                  type="button"
-                  onClick={handlePrev}
-                  className={cls(
-                    "inline-flex h-12 items-center justify-center rounded-2xl border px-5 text-sm font-bold transition",
-                    darkMode
-                      ? "border-violet-400/25 bg-white/5 text-violet-100 hover:bg-white/10"
-                      : "border-rose-200 bg-white text-rose-700 hover:bg-rose-50"
-                  )}
-                >
-                  {currentIndex === 0 ? ui.backHome : ui.prev}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleNext}
-                  disabled={currentSelectedIndex === undefined}
-                  className={cls(
-                    "inline-flex h-12 items-center justify-center rounded-2xl px-5 text-sm font-bold transition",
-                    currentSelectedIndex === undefined
-                      ? darkMode
-                        ? "cursor-not-allowed bg-white/10 text-white/40"
-                        : "cursor-not-allowed bg-rose-100 text-rose-300"
-                      : darkMode
-                        ? "bg-gradient-to-r from-fuchsia-300 to-violet-300 text-violet-950 hover:opacity-95"
-                        : "bg-gradient-to-r from-pink-300 to-rose-400 text-white hover:opacity-95"
-                  )}
-                >
-                  {currentIndex === total - 1 ? ui.viewResult : ui.next}
-                </button>
-              </div>
-            </Surface>
-          </div>
-        )}
-
-        {page === "result" && (
-          <div className="space-y-5">
-            <Surface darkMode={darkMode}>
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div
-                  className={cls(
-                    "text-sm font-bold",
-                    darkMode ? "text-violet-200/80" : "text-rose-500"
-                  )}
-                >
-                  {ui.resultTag}
-                </div>
-
-                <button
-                  type="button"
-                  onClick={resetAll}
-                  className={cls(
-                    "inline-flex h-10 items-center justify-center rounded-2xl border px-4 text-sm font-bold transition",
-                    darkMode
-                      ? "border-violet-400/25 bg-white/5 text-violet-100 hover:bg-white/10"
-                      : "border-rose-200 bg-white text-rose-700 hover:bg-rose-50"
-                  )}
-                >
-                  {ui.retake}
-                </button>
-              </div>
-
-              <h2 className="mt-5 text-2xl font-bold tracking-tight md:text-4xl">
-                {result.title}
-              </h2>
-
-              <p
-                className={cls(
-                  "mt-4 max-w-2xl text-sm leading-7 md:text-[15px]",
-                  darkMode ? "text-violet-100/80" : "text-zinc-600"
-                )}
-              >
-                {result.text}
-              </p>
-
-              <div
-                className={cls(
-                  "mt-6 inline-flex rounded-full px-4 py-2 text-sm font-bold",
-                  darkMode
-                    ? "bg-violet-400/15 text-violet-100"
-                    : "bg-rose-100 text-rose-700"
-                )}
-              >
-                {result.badge}
-              </div>
-
-              {tierDetail && (
-                <div
-                  className={cls(
-                    "mt-6 rounded-3xl border p-5 md:p-6",
-                    darkMode
-                      ? "border-violet-400/20 bg-white/5"
-                      : "border-rose-200 bg-white"
-                  )}
-                >
-                  <div
-                    className={cls(
-                      "text-base font-bold md:text-lg",
-                      darkMode ? "text-violet-100" : "text-rose-700"
-                    )}
-                  >
-                    {tierDetail.title}
-                  </div>
-
-                  <p
-                    className={cls(
-                      "mt-3 text-sm leading-7 md:text-[15px]",
-                      darkMode ? "text-violet-100/85" : "text-zinc-700"
-                    )}
-                  >
-                    {tierDetail.summary}
-                  </p>
-
-                  <p
-                    className={cls(
-                      "mt-3 text-sm leading-7 md:text-[15px]",
-                      darkMode ? "text-violet-100/75" : "text-zinc-600"
-                    )}
-                  >
-                    {tierDetail.detail}
-                  </p>
-                </div>
-              )}
-
-              <div
-                className={cls(
-                  "mt-6 rounded-3xl border p-5",
-                  darkMode
-                    ? "border-violet-400/20 bg-white/5"
-                    : "border-rose-200 bg-rose-50/70"
-                )}
-              >
-                <div
-                  className={cls(
-                    "text-sm font-bold",
-                    darkMode ? "text-violet-100" : "text-rose-700"
-                  )}
-                >
-                  {ui.resultMeterTitle}
-                </div>
-
-                <div className="mt-4">
-                  <LevelMeter
-                    level={result.level}
-                    darkMode={darkMode}
-                    manualReview={result.tier === "D"}
-                  />
-                </div>
-
-                <div
-                  className={cls(
-                    "mt-3 text-xs md:text-sm",
-                    darkMode ? "text-violet-200/80" : "text-rose-600"
-                  )}
-                >
-                  {result.tier === "D" ? ui.manualHint : ui.resultMeterHint}
-                </div>
-              </div>
-
-              <div
-                className={cls(
-                  "mt-6 rounded-3xl border p-4 text-sm leading-7 md:p-5 md:text-[15px]",
-                  darkMode
-                    ? "border-violet-400/20 bg-white/5 text-violet-100/85"
-                    : "border-rose-200 bg-white text-zinc-700"
-                )}
-              >
-                <div className="font-bold">{ui.extraTitle}</div>
-                <div className="mt-2">{ui.extraBody}</div>
-              </div>
-
-              {result.tier !== "D" && (
-                <div className="mt-6">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setManualReview(true);
-                      setPage("result");
-                    }}
-                    className={cls(
-                      "inline-flex h-12 items-center justify-center rounded-2xl border px-5 text-sm font-bold transition",
-                      darkMode
-                        ? "border-violet-400/25 bg-white/5 text-violet-100 hover:bg-white/10"
-                        : "border-rose-200 bg-white text-rose-700 hover:bg-rose-50"
-                    )}
-                  >
-                    {ui.switchToManual}
-                  </button>
-                </div>
-              )}
-            </Surface>
-          </div>
-        )}
+          <footer className={cn("mx-auto mt-8 w-full max-w-4xl rounded-[28px] border px-5 py-4 text-center text-sm", night ? "border-white/10 bg-white/5 text-white/65" : "border-white/70 bg-white/75 text-slate-600")}>
+            Made by Fur31mu · Built with React, Tailwind, Framer Motion, and html2canvas · Code assistance by GPT
+          </footer>
+        </div>
       </div>
     </div>
   );
